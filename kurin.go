@@ -26,6 +26,7 @@ type (
 	Adapter interface {
 		Closable
 		Open()
+		ListenFailure(chan error)
 	}
 )
 
@@ -56,8 +57,9 @@ func (a *App) Run() {
 	signal.Notify(stop, os.Interrupt)
 
 	log.Printf("Starting %s ...\n", a.name)
-	for _, a := range a.adapters {
-		go a.Open()
+	for _, adapter := range a.adapters {
+		go adapter.Open()
+		adapter.ListenFailure(a.fail)
 	}
 
 	for _, system := range a.fallibleSystems {

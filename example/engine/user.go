@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/maxperrimond/kensho"
 	"github.com/maxperrimond/kurin"
 	"github.com/maxperrimond/kurin/example/domain"
 )
@@ -8,7 +9,7 @@ import (
 type (
 	CreateUserRequest struct {
 		Username string `json:"username"`
-		Email    string `json:"email"`
+		Email    string `json:"email" valid:"email"`
 	}
 )
 
@@ -22,7 +23,10 @@ func (engine *exampleEngine) GetUser(id string) (*domain.User, error) {
 }
 
 func (engine *exampleEngine) CreateUser(r *CreateUserRequest) (*domain.User, error) {
-	// Validate the request
+	valid, errors := kensho.Validate(r)
+	if !valid {
+		return nil, kurin.NewInvalid(r, errors)
+	}
 
 	user := &domain.User{
 		Email:    r.Email,
