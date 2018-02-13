@@ -92,7 +92,7 @@ func (a *adapter) Close() {
 	}
 }
 
-func (a *adapter) ListenFailure(err chan error) {
+func (a *adapter) ListenFailure(err <-chan error) {
 	go func() {
 		newError := <-err
 		if newError != nil {

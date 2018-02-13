@@ -26,7 +26,7 @@ type (
 	Adapter interface {
 		Closable
 		Open()
-		ListenFailure(chan error)
+		ListenFailure(<-chan error)
 	}
 )
 
@@ -55,15 +55,20 @@ func (a *App) RegisterClosableSystems(systems ...Closable) {
 func (a *App) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
+	defer close(stop)
 
 	log.Printf("Starting %s ...\n", a.name)
-	for _, adapter := range a.adapters {
-		go adapter.Open()
-		adapter.ListenFailure(a.fail)
-	}
+
+	a.fail = make(chan error)
+	defer close(a.fail)
 
 	for _, system := range a.fallibleSystems {
 		system.NotifyFail(a.fail)
+	}
+
+	for _, adapter := range a.adapters {
+		go adapter.Open()
+		adapter.ListenFailure(a.fail)
 	}
 
 	<-stop
