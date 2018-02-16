@@ -13,12 +13,13 @@ type (
 	}
 
 	Invalid struct {
-		Obj    interface{}
-		Errors *kensho.ValidationError
+		Obj     interface{}
+		Errors  *kensho.ValidationError
+		Message string
 	}
 
 	Unauthorized struct {
-		Reason string
+		Message string
 	}
 )
 
@@ -31,10 +32,14 @@ func (err *NotFound) Error() string {
 }
 
 func NewInvalid(obj interface{}, errors *kensho.ValidationError) *Invalid {
-	return &Invalid{obj, errors}
+	return &Invalid{obj, errors, ""}
 }
 
 func (err *Invalid) Error() string {
+	if err.Message != "" {
+		return err.Message
+	}
+
 	return "data in object is invalid"
 }
 
@@ -43,5 +48,5 @@ func NewUnauthorized(reason string) *Unauthorized {
 }
 
 func (err *Unauthorized) Error() string {
-	return err.Reason
+	return err.Message
 }
