@@ -40,7 +40,7 @@ func (err *Invalid) Error() string {
 		return err.Message
 	}
 
-	return "data in object is invalid"
+	return "request is invalid"
 }
 
 func NewUnauthorized(reason string) *Unauthorized {
