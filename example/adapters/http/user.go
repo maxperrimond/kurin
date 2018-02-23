@@ -14,8 +14,7 @@ func listUsersHandler(e engine.Engine) http.HandlerFunc {
 
 		j, err := json.Marshal(users)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(err)
 		}
 
 		w.Header().Add("Content-Type", "application/json")
@@ -37,8 +36,7 @@ func createUserHandler(e engine.Engine) http.HandlerFunc {
 
 		j, err := json.Marshal(user)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(err)
 		}
 
 		w.Header().Add("Content-Type", "application/json")
@@ -59,8 +57,7 @@ func getUserHandler(e engine.Engine) http.HandlerFunc {
 
 		j, err := json.Marshal(user)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(err)
 		}
 
 		w.Header().Add("Content-Type", "application/json")

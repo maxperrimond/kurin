@@ -2,7 +2,6 @@ package engine
 
 import (
 	"github.com/maxperrimond/kensho"
-	"github.com/maxperrimond/kurin"
 	"github.com/maxperrimond/kurin/example/domain"
 )
 
@@ -16,7 +15,7 @@ type (
 func (engine *exampleEngine) GetUser(id string) (*domain.User, error) {
 	user := engine.userRepository.Get(id)
 	if user == nil {
-		return nil, kurin.NewNotFound(id, "user")
+		return nil, NewNotFound(id, "user")
 	}
 
 	return user, nil
@@ -25,7 +24,7 @@ func (engine *exampleEngine) GetUser(id string) (*domain.User, error) {
 func (engine *exampleEngine) CreateUser(r *CreateUserRequest) (*domain.User, error) {
 	valid, errors := kensho.Validate(r)
 	if !valid {
-		return nil, kurin.NewInvalid(r, errors)
+		return nil, NewInvalid(r, errors)
 	}
 
 	user := &domain.User{

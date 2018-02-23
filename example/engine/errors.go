@@ -1,4 +1,4 @@
-package kurin
+package engine
 
 import (
 	"fmt"
@@ -15,10 +15,6 @@ type (
 	Invalid struct {
 		Obj     interface{}
 		Errors  *kensho.ValidationError
-		Message string
-	}
-
-	Unauthorized struct {
 		Message string
 	}
 )
@@ -41,12 +37,4 @@ func (err *Invalid) Error() string {
 	}
 
 	return "request is invalid"
-}
-
-func NewUnauthorized(reason string) *Unauthorized {
-	return &Unauthorized{reason}
-}
-
-func (err *Unauthorized) Error() string {
-	return err.Message
 }
