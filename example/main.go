@@ -16,7 +16,7 @@ func main() {
 	e := engineFactory.NewEngine()
 
 	// App
-	a := kurin.NewApp("Example", http.NewHTTPAdapter(e, "8080"))
+	a := kurin.NewApp("Example", http.NewHTTPAdapter(e, "7272"))
 	a.RegisterFallibleSystems(exampleProviderFactory.(*example.ProviderFactory))
 	a.RegisterClosableSystems(exampleProviderFactory.(*example.ProviderFactory))
 	a.Run()
