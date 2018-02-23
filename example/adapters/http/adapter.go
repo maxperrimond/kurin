@@ -21,18 +21,6 @@ func NewHTTPAdapter(e engine.Engine, port string) kurin.Adapter {
 	a := adapters.NewHTTPAdapter(h, port)
 
 	r.NewRoute().
-		Name("Health check").
-		Methods(http.MethodGet).
-		Path("/health").
-		HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if a.(*adapters.HTTPAdapter).Healthy {
-				w.WriteHeader(http.StatusOK)
-			} else {
-				w.WriteHeader(http.StatusServiceUnavailable)
-			}
-		})
-
-	r.NewRoute().
 		Name("List all users").
 		Methods(http.MethodGet).
 		Path("/users").

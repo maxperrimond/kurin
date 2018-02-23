@@ -26,6 +26,7 @@ type (
 	Adapter interface {
 		Closable
 		Open()
+		Healthy() bool
 		ListenFailure(<-chan error)
 	}
 )

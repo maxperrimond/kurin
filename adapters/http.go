@@ -15,43 +15,57 @@ type (
 	HTTPAdapter struct {
 		srv     *http.Server
 		port    string
-		Healthy bool
+		healthy bool
 	}
 )
 
 func NewHTTPAdapter(handler http.Handler, port string) kurin.Adapter {
-	a := &HTTPAdapter{
+	adapter := &HTTPAdapter{
 		port:    port,
-		Healthy: true,
+		healthy: true,
 	}
 
-	a.srv = &http.Server{
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		if adapter.healthy {
+			w.WriteHeader(http.StatusNoContent)
+		} else {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+	})
+	mux.Handle("/", handler)
+
+	adapter.srv = &http.Server{
 		Addr:         fmt.Sprintf(":%s", port),
-		Handler:      handler,
+		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
-	return a
+	return adapter
 }
 
-func (a *HTTPAdapter) Open() {
-	log.Printf("Listening on http://0.0.0.0:%s\n", a.port)
-	a.srv.ListenAndServe()
+func (adapter *HTTPAdapter) Open() {
+	log.Printf("Listening on http://0.0.0.0:%s\n", adapter.port)
+	adapter.srv.ListenAndServe()
 }
 
-func (a *HTTPAdapter) Close() {
-	err := a.srv.Close()
+func (adapter *HTTPAdapter) Close() {
+	err := adapter.srv.Close()
 	if err != nil {
 		log.Println(err)
 	}
 }
 
-func (a *HTTPAdapter) ListenFailure(ce <-chan error) {
+func (adapter *HTTPAdapter) Healthy() bool {
+	return adapter.healthy
+}
+
+func (adapter *HTTPAdapter) ListenFailure(ce <-chan error) {
 	go func() {
 		err := <-ce
 		if err != nil {
-			a.Healthy = false
+			adapter.healthy = false
 		}
 	}()
 }
