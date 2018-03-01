@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/maxperrimond/kurin"
-	"github.com/maxperrimond/kurin/adapters"
 	"github.com/maxperrimond/kurin/example/engine"
 )
 
@@ -18,7 +17,7 @@ func NewHTTPAdapter(e engine.Engine, port string) kurin.Adapter {
 	h = handlers.ContentTypeHandler(h, "application/json")
 	h = handlers.CombinedLoggingHandler(os.Stdout, h)
 
-	a := adapters.NewHTTPAdapter(h, port)
+	a := httpAdapter.NewHTTPAdapter(h, port)
 
 	r.NewRoute().
 		Name("List all users").
