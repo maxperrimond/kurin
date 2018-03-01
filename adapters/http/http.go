@@ -1,4 +1,4 @@
-package http_adapter
+package http
 
 import (
 	"net/http"
@@ -33,7 +33,7 @@ func NewHTTPAdapter(handler http.Handler, port string) kurin.Adapter {
 	})
 	totalCount := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "api_requests_total",
+			Name: "requests_total",
 			Help: "A counter for requests to the wrapped handler.",
 		},
 		[]string{"code", "method"},
