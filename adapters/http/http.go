@@ -45,7 +45,7 @@ func NewHTTPAdapter(handler http.Handler, port string) kurin.Adapter {
 			Buckets:     prometheus.DefBuckets,
 			ConstLabels: prometheus.Labels{"handler": "api"},
 		},
-		[]string{"method"},
+		[]string{"code", "method"},
 	)
 	prometheus.MustRegister(inFlight, totalCount, durationHist)
 
