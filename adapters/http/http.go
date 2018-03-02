@@ -1,11 +1,9 @@
 package http
 
 import (
-	"net/http"
-
-	"log"
-
 	"fmt"
+	"log"
+	"net/http"
 	"time"
 
 	"github.com/maxperrimond/kurin"
@@ -27,27 +25,23 @@ func NewHTTPAdapter(handler http.Handler, port string) kurin.Adapter {
 		healthy: true,
 	}
 
-	inFlight := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "in_flight_requests",
-		Help: "A gauge of requests currently being served by the wrapped handler.",
-	})
 	totalCount := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "requests_total",
+			Name: "app_requests_total",
 			Help: "A counter for requests to the wrapped handler.",
 		},
 		[]string{"code", "method"},
 	)
 	durationHist := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:        "response_duration_seconds",
+			Name:        "app_response_duration_seconds",
 			Help:        "A histogram of request latencies.",
 			Buckets:     prometheus.DefBuckets,
 			ConstLabels: prometheus.Labels{"handler": "api"},
 		},
 		[]string{"code", "method"},
 	)
-	prometheus.MustRegister(inFlight, totalCount, durationHist)
+	prometheus.MustRegister(totalCount, durationHist)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -59,9 +53,8 @@ func NewHTTPAdapter(handler http.Handler, port string) kurin.Adapter {
 	})
 	mux.Handle("/metrics", promhttp.Handler())
 	mux.Handle("/",
-		promhttp.InstrumentHandlerInFlight(inFlight,
-			promhttp.InstrumentHandlerCounter(totalCount,
-				promhttp.InstrumentHandlerDuration(durationHist, handler))))
+		promhttp.InstrumentHandlerCounter(totalCount,
+			promhttp.InstrumentHandlerDuration(durationHist, handler)))
 
 	adapter.srv = &http.Server{
 		Addr:         fmt.Sprintf(":%s", port),
