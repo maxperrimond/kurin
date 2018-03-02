@@ -37,11 +37,19 @@ func NewApp(name string, adapters ...Adapter) *App {
 		closableSystems[i] = Closable(a)
 	}
 
+	var fallibleSystems []Fallible
+	for _, a := range adapters {
+		f, ok := a.(Fallible)
+		if ok {
+			fallibleSystems = append(fallibleSystems, f)
+		}
+	}
+
 	return &App{
 		name:            name,
 		adapters:        adapters,
 		closableSystems: closableSystems,
-		fallibleSystems: []Fallible{},
+		fallibleSystems: fallibleSystems,
 	}
 }
 
