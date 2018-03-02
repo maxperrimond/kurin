@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"context"
+
 	"github.com/maxperrimond/kurin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -15,13 +17,15 @@ type (
 	Adapter struct {
 		srv     *http.Server
 		port    string
+		version string
 		healthy bool
 	}
 )
 
-func NewHTTPAdapter(handler http.Handler, port string) kurin.Adapter {
+func NewHTTPAdapter(handler http.Handler, port string, version string) kurin.Adapter {
 	adapter := &Adapter{
 		port:    port,
+		version: version,
 		healthy: true,
 	}
 
@@ -51,6 +55,10 @@ func NewHTTPAdapter(handler http.Handler, port string) kurin.Adapter {
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
 	})
+	mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, version)
+	})
 	mux.Handle("/metrics", promhttp.Handler())
 	mux.Handle("/",
 		promhttp.InstrumentHandlerCounter(totalCount,
@@ -72,7 +80,7 @@ func (adapter *Adapter) Open() {
 }
 
 func (adapter *Adapter) Close() {
-	err := adapter.srv.Close()
+	err := adapter.srv.Shutdown(context.Background())
 	if err != nil {
 		log.Println(err)
 	}

@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 type (
@@ -63,10 +64,10 @@ func (a *App) RegisterClosableSystems(systems ...Closable) {
 
 func (a *App) Run() {
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	defer close(stop)
 
-	log.Printf("Starting %s ...\n", a.name)
+	log.Printf("Starting %s application...\n", a.name)
 
 	a.fail = make(chan error)
 	defer close(a.fail)
@@ -82,7 +83,7 @@ func (a *App) Run() {
 
 	<-stop
 
-	log.Println("Shutting down server...")
+	log.Println("Shutdown signal received, exiting...")
 
 	for _, c := range a.closableSystems {
 		c.Close()
