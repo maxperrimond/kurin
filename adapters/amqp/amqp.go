@@ -1,6 +1,8 @@
 package amqp
 
 import (
+	"log"
+
 	"github.com/assembla/cony"
 	"github.com/maxperrimond/kurin"
 	"github.com/streadway/amqp"
@@ -28,6 +30,7 @@ func NewAMQPAdapter(client *cony.Client, consumer *cony.Consumer, handler Delive
 }
 
 func (adapter *Adapter) Open() {
+	log.Println("Consuming amqp...")
 	for adapter.client.Loop() {
 		select {
 		case msg := <-adapter.consumer.Deliveries():
