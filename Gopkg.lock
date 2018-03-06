@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/assembla/cony"
+  packages = ["."]
+  revision = "dd62697b0adb9adfda8589520cb85f4cbc2361f1"
+  version = "v0.3.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
@@ -79,9 +85,15 @@
   ]
   revision = "d274e363d5759d1c916232217be421f1cc89c5fe"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/streadway/amqp"
+  packages = ["."]
+  revision = "fc7fda2371f5327ad39211e09482845b8734cc72"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ef9c6c61a221b20f6073b525b56f39c25ce03b951d1f366c5b3ed5e31b357199"
+  inputs-digest = "9bc82e1543dcdd1f4665fe64ee23fb975b4f824971a905991a6859176ab6bc7b"
   solver-name = "gps-cdcl"
   solver-version = 1
