@@ -13,7 +13,7 @@ type (
 		client   *cony.Client
 		consumer *cony.Consumer
 		handler  DeliveryHandler
-		fail     chan error
+		onFail   chan error
 		healthy  bool
 	}
 
@@ -25,7 +25,6 @@ func NewAMQPAdapter(client *cony.Client, consumer *cony.Consumer, handler Delive
 		client:   client,
 		consumer: consumer,
 		handler:  handler,
-		fail:     make(chan error),
 	}
 }
 
@@ -36,7 +35,9 @@ func (adapter *Adapter) Open() {
 		case msg := <-adapter.consumer.Deliveries():
 			adapter.handler(msg)
 		case err := <-adapter.client.Errors():
-			adapter.fail <- err
+			if adapter.onFail != nil {
+				adapter.onFail <- err
+			}
 		}
 	}
 }
@@ -59,7 +60,5 @@ func (adapter *Adapter) ListenFailure(ce <-chan error) {
 }
 
 func (adapter *Adapter) NotifyFail(ce chan error) {
-	go func() {
-		ce <- <-adapter.fail
-	}()
+	adapter.onFail = ce
 }
