@@ -25,6 +25,7 @@ func NewAMQPAdapter(client *cony.Client, consumer *cony.Consumer, handler Delive
 		client:   client,
 		consumer: consumer,
 		handler:  handler,
+		healthy:  true,
 	}
 }
 
