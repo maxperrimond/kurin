@@ -13,7 +13,7 @@ type (
 	}
 )
 
-func NewFactory() engine.ExampleProviderFactory {
+func NewFactory() *ProviderFactory {
 	return &ProviderFactory{
 		db: userDB{},
 	}

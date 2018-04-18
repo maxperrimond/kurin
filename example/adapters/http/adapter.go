@@ -39,5 +39,5 @@ func NewHTTPAdapter(e engine.Engine, port string) kurin.Adapter {
 		Path("/users/{id}").
 		Handler(deleteUserHandler(e))
 
-	return httpAdapter.NewHTTPAdapter(h, port)
+	return httpAdapter.NewHTTPAdapter(h, port, "1.0.0")
 }

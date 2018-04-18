@@ -17,7 +17,6 @@ func main() {
 
 	// App
 	a := kurin.NewApp("Example", http.NewHTTPAdapter(e, "7272"))
-	a.RegisterFallibleSystems(exampleProviderFactory.(*example.ProviderFactory))
-	a.RegisterClosableSystems(exampleProviderFactory.(*example.ProviderFactory))
+	a.RegisterSystems(exampleProviderFactory)
 	a.Run()
 }

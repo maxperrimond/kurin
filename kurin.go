@@ -27,8 +27,7 @@ type (
 	Adapter interface {
 		Closable
 		Open()
-		Healthy() bool
-		ListenFailure(<-chan error)
+		OnFailure(error)
 	}
 )
 
@@ -54,12 +53,16 @@ func NewApp(name string, adapters ...Adapter) *App {
 	}
 }
 
-func (a *App) RegisterFallibleSystems(systems ...Fallible) {
-	a.fallibleSystems = append(a.fallibleSystems, systems...)
-}
+func (a *App) RegisterSystems(systems ...interface{}) {
+	for _, s := range systems {
+		if f, ok := s.(Fallible); ok {
+			a.fallibleSystems = append(a.fallibleSystems, f)
+		}
 
-func (a *App) RegisterClosableSystems(systems ...Closable) {
-	a.closableSystems = append(a.closableSystems, systems...)
+		if c, ok := s.(Closable); ok {
+			a.closableSystems = append(a.closableSystems, c)
+		}
+	}
 }
 
 func (a *App) Run() {
@@ -78,10 +81,21 @@ func (a *App) Run() {
 
 	for _, adapter := range a.adapters {
 		go adapter.Open()
-		adapter.ListenFailure(a.fail)
 	}
 
-	<-stop
+	func() {
+		for {
+			select {
+			case err := <-a.fail:
+				for _, adapter := range a.adapters {
+					adapter.OnFailure(err)
+				}
+				break
+			case <-stop:
+				return
+			}
+		}
+	}()
 
 	log.Println("Shutdown signal received, exiting...")
 

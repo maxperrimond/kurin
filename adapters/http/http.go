@@ -15,10 +15,11 @@ import (
 
 type (
 	Adapter struct {
-		srv     *http.Server
-		port    string
-		version string
-		healthy bool
+		srv       *http.Server
+		port      string
+		version   string
+		healthy   bool
+		lastError error
 	}
 )
 
@@ -53,6 +54,7 @@ func NewHTTPAdapter(handler http.Handler, port string, version string) kurin.Ada
 			w.WriteHeader(http.StatusNoContent)
 		} else {
 			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(adapter.lastError.Error()))
 		}
 	})
 	mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
@@ -86,15 +88,9 @@ func (adapter *Adapter) Close() {
 	}
 }
 
-func (adapter *Adapter) Healthy() bool {
-	return adapter.healthy
-}
-
-func (adapter *Adapter) ListenFailure(ce <-chan error) {
-	go func() {
-		err := <-ce
-		if err != nil {
-			adapter.healthy = false
-		}
-	}()
+func (adapter *Adapter) OnFailure(err error) {
+	if err != nil {
+		adapter.lastError = err
+		adapter.healthy = false
+	}
 }
