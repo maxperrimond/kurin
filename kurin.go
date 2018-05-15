@@ -32,25 +32,15 @@ type (
 )
 
 func NewApp(name string, adapters ...Adapter) *App {
-	closableSystems := make([]Closable, len(adapters))
-	for i, a := range adapters {
-		closableSystems[i] = Closable(a)
-	}
-
-	var fallibleSystems []Fallible
-	for _, a := range adapters {
-		f, ok := a.(Fallible)
-		if ok {
-			fallibleSystems = append(fallibleSystems, f)
-		}
-	}
-
-	return &App{
+	app := &App{
 		name:            name,
 		adapters:        adapters,
-		closableSystems: closableSystems,
-		fallibleSystems: fallibleSystems,
+		closableSystems: make([]Closable, 0),
+		fallibleSystems: make([]Fallible, 0),
 	}
+	app.RegisterSystems(adapters)
+
+	return app
 }
 
 func (a *App) RegisterSystems(systems ...interface{}) {
