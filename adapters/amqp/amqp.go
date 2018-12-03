@@ -14,10 +14,8 @@ type (
 		client   *cony.Client
 		consumer *cony.Consumer
 		handler  DeliveryHandler
-		onFail   chan error
 		onStop   chan os.Signal
 		logger   kurin.Logger
-		healthy  bool
 	}
 
 	DeliveryHandler func(msg amqp.Delivery)
@@ -29,7 +27,6 @@ func NewAMQPAdapter(client *cony.Client, consumer *cony.Consumer, handler Delive
 		consumer: consumer,
 		handler:  handler,
 		logger:   logger,
-		healthy:  true,
 	}
 }
 
@@ -38,14 +35,10 @@ func (adapter *Adapter) Open() {
 	for adapter.client.Loop() {
 		select {
 		case msg := <-adapter.consumer.Deliveries():
-			if adapter.healthy {
-				adapter.handler(msg)
-			}
+			adapter.handler(msg)
 		case err := <-adapter.client.Errors():
-			if adapter.onFail != nil {
-				adapter.logger.Error(err)
-				adapter.onStop <- syscall.Signal(0)
-			}
+			adapter.logger.Error(err)
+			adapter.onStop <- syscall.Signal(0)
 		}
 	}
 }
@@ -60,10 +53,6 @@ func (adapter *Adapter) NotifyStop(c chan os.Signal) {
 
 func (adapter *Adapter) OnFailure(err error) {
 	if err != nil {
-		adapter.healthy = false
+		adapter.onStop <- syscall.Signal(0)
 	}
-}
-
-func (adapter *Adapter) NotifyFail(c chan error) {
-	adapter.onFail = c
 }
