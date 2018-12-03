@@ -1,0 +1,23 @@
+[prune]
+  go-tests = true
+  unused-packages = true
+
+[[constraint]]
+  name = "github.com/gorilla/handlers"
+  version = "1.4.0"
+
+[[constraint]]
+  name = "github.com/gorilla/mux"
+  version = "1.6.2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/maxperrimond/kensho"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/maxperrimond/kurin"
+
+[[constraint]]
+  name = "go.uber.org/zap"
+  version = "1.9.1"

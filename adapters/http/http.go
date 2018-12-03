@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -16,18 +15,20 @@ import (
 type (
 	Adapter struct {
 		srv       *http.Server
-		port      string
+		port      int
 		version   string
 		healthy   bool
+		logger    kurin.Logger
 		lastError error
 	}
 )
 
-func NewHTTPAdapter(handler http.Handler, port string, version string) kurin.Adapter {
+func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin.Logger) kurin.Adapter {
 	adapter := &Adapter{
 		port:    port,
 		version: version,
 		healthy: true,
+		logger:  logger,
 	}
 
 	totalCount := prometheus.NewCounterVec(
@@ -39,10 +40,9 @@ func NewHTTPAdapter(handler http.Handler, port string, version string) kurin.Ada
 	)
 	durationHist := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:        "app_response_duration_seconds",
-			Help:        "A histogram of request latencies.",
-			Buckets:     prometheus.DefBuckets,
-			ConstLabels: prometheus.Labels{"handler": "api"},
+			Name:    "app_response_duration_seconds",
+			Help:    "A histogram of request latencies.",
+			Buckets: prometheus.DefBuckets,
 		},
 		[]string{"code", "method"},
 	)
@@ -67,7 +67,7 @@ func NewHTTPAdapter(handler http.Handler, port string, version string) kurin.Ada
 			promhttp.InstrumentHandlerDuration(durationHist, handler)))
 
 	adapter.srv = &http.Server{
-		Addr:         fmt.Sprintf(":%s", port),
+		Addr:         fmt.Sprintf(":%d", port),
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -77,14 +77,17 @@ func NewHTTPAdapter(handler http.Handler, port string, version string) kurin.Ada
 }
 
 func (adapter *Adapter) Open() {
-	log.Printf("Listening on http://0.0.0.0:%s\n", adapter.port)
-	adapter.srv.ListenAndServe()
+	adapter.logger.Info("Listening on http://0.0.0.0:%d\n", adapter.port)
+	err := adapter.srv.ListenAndServe()
+	if err != nil {
+		adapter.logger.Fatal(err)
+	}
 }
 
 func (adapter *Adapter) Close() {
 	err := adapter.srv.Shutdown(context.Background())
 	if err != nil {
-		log.Println(err)
+		adapter.logger.Error(err)
 	}
 }
 

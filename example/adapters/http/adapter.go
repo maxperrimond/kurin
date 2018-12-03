@@ -9,15 +9,11 @@ import (
 	"github.com/maxperrimond/kurin"
 	httpAdapter "github.com/maxperrimond/kurin/adapters/http"
 	"github.com/maxperrimond/kurin/example/engine"
+	"go.uber.org/zap"
 )
 
-func NewHTTPAdapter(e engine.Engine, port string) kurin.Adapter {
+func NewHTTPAdapter(e engine.Engine, port int, logger *zap.Logger) kurin.Adapter {
 	r := mux.NewRouter().StrictSlash(false)
-	h := handlers.RecoveryHandler()(r)
-	h = handlers.CompressHandler(h)
-	h = handlers.ContentTypeHandler(h, "application/json")
-	h = handlers.CombinedLoggingHandler(os.Stdout, h)
-
 	r.NewRoute().
 		Name("List all users").
 		Methods(http.MethodGet).
@@ -39,5 +35,10 @@ func NewHTTPAdapter(e engine.Engine, port string) kurin.Adapter {
 		Path("/users/{id}").
 		Handler(deleteUserHandler(e))
 
-	return httpAdapter.NewHTTPAdapter(h, port, "1.0.0")
+	h := handlers.RecoveryHandler()(r)
+	h = handlers.CompressHandler(h)
+	h = handlers.ContentTypeHandler(h, "application/json")
+	h = handlers.CombinedLoggingHandler(os.Stdout, h)
+
+	return httpAdapter.NewHTTPAdapter(h, port, "1.0.0", logger.Sugar())
 }

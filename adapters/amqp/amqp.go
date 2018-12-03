@@ -1,7 +1,8 @@
 package amqp
 
 import (
-	"log"
+	"os"
+	"syscall"
 
 	"github.com/assembla/cony"
 	"github.com/maxperrimond/kurin"
@@ -14,34 +15,36 @@ type (
 		consumer *cony.Consumer
 		handler  DeliveryHandler
 		onFail   chan error
+		onStop   chan os.Signal
+		logger   kurin.Logger
 		healthy  bool
 	}
 
 	DeliveryHandler func(msg amqp.Delivery)
 )
 
-func NewAMQPAdapter(client *cony.Client, consumer *cony.Consumer, handler DeliveryHandler) kurin.Adapter {
+func NewAMQPAdapter(client *cony.Client, consumer *cony.Consumer, handler DeliveryHandler, logger kurin.Logger) kurin.Adapter {
 	return &Adapter{
 		client:   client,
 		consumer: consumer,
 		handler:  handler,
+		logger:   logger,
 		healthy:  true,
 	}
 }
 
 func (adapter *Adapter) Open() {
-	log.Println("Consuming amqp...")
+	adapter.logger.Info("Consuming amqp...")
 	for adapter.client.Loop() {
 		select {
 		case msg := <-adapter.consumer.Deliveries():
 			if adapter.healthy {
 				adapter.handler(msg)
-			} else {
-				msg.Nack(false, true)
 			}
 		case err := <-adapter.client.Errors():
 			if adapter.onFail != nil {
 				adapter.onFail <- err
+				adapter.onStop <- syscall.Signal(0)
 			}
 		}
 	}
@@ -49,6 +52,10 @@ func (adapter *Adapter) Open() {
 
 func (adapter *Adapter) Close() {
 	adapter.client.Close()
+}
+
+func (adapter *Adapter) NotifyStop(cs chan os.Signal) {
+	adapter.onStop = cs
 }
 
 func (adapter *Adapter) OnFailure(err error) {
