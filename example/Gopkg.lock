@@ -59,14 +59,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d4b383cdd5e81785410e83af0faff6427c26c7d3194285cf776ad175c82f9f53"
+  digest = "1:1925abc87738281e2e4c55dedba1b0e1759d9c2c921c66a97b7d663dafc47589"
   name = "github.com/maxperrimond/kurin"
   packages = [
     ".",
     "adapters/http",
   ]
   pruneopts = "UT"
-  revision = "b8bd8061b36c10dc69050997aa3e77fa6095c3cf"
+  revision = "35e8144da69c05b3aa4bd3bae94a02b70662c248"
 
 [[projects]]
   branch = "master"
