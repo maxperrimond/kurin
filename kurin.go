@@ -9,13 +9,14 @@ import (
 
 type (
 	App struct {
-		name            string
-		logger          Logger
-		adapters        []Adapter
-		fallibleSystems []Fallible
-		closableSystems []Closable
-		stop            chan os.Signal
-		fail            chan error
+		name             string
+		logger           Logger
+		adapters         []Adapter
+		fallibleSystems  []Fallible
+		closableSystems  []Closable
+		stoppableSystems []Stoppable
+		stop             chan os.Signal
+		fail             chan error
 	}
 
 	Fallible interface {
@@ -32,6 +33,7 @@ type (
 
 	Adapter interface {
 		Closable
+		Stoppable
 		Open()
 		OnFailure(error)
 	}
@@ -82,6 +84,10 @@ func (a *App) Run() {
 
 	for _, system := range a.fallibleSystems {
 		system.NotifyFail(a.fail)
+	}
+
+	for _, system := range a.stoppableSystems {
+		system.NotifyStop(a.stop)
 	}
 
 	for _, adapter := range a.adapters {

@@ -7,6 +7,10 @@ import (
 
 	"context"
 
+	"os"
+
+	"syscall"
+
 	"github.com/maxperrimond/kurin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -20,6 +24,7 @@ type (
 		healthy   bool
 		logger    kurin.Logger
 		lastError error
+		onStop    chan os.Signal
 	}
 )
 
@@ -80,7 +85,8 @@ func (adapter *Adapter) Open() {
 	adapter.logger.Info("Listening on http://0.0.0.0:%d\n", adapter.port)
 	err := adapter.srv.ListenAndServe()
 	if err != nil {
-		adapter.logger.Fatal(err)
+		adapter.logger.Error(err)
+		adapter.onStop <- syscall.Signal(0)
 	}
 }
 
@@ -89,6 +95,10 @@ func (adapter *Adapter) Close() {
 	if err != nil {
 		adapter.logger.Error(err)
 	}
+}
+
+func (adapter *Adapter) NotifyStop(c chan os.Signal) {
+	adapter.onStop = c
 }
 
 func (adapter *Adapter) OnFailure(err error) {

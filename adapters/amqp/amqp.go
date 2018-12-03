@@ -43,7 +43,7 @@ func (adapter *Adapter) Open() {
 			}
 		case err := <-adapter.client.Errors():
 			if adapter.onFail != nil {
-				adapter.onFail <- err
+				adapter.logger.Error(err)
 				adapter.onStop <- syscall.Signal(0)
 			}
 		}
@@ -54,8 +54,8 @@ func (adapter *Adapter) Close() {
 	adapter.client.Close()
 }
 
-func (adapter *Adapter) NotifyStop(cs chan os.Signal) {
-	adapter.onStop = cs
+func (adapter *Adapter) NotifyStop(c chan os.Signal) {
+	adapter.onStop = c
 }
 
 func (adapter *Adapter) OnFailure(err error) {
@@ -64,6 +64,6 @@ func (adapter *Adapter) OnFailure(err error) {
 	}
 }
 
-func (adapter *Adapter) NotifyFail(ce chan error) {
-	adapter.onFail = ce
+func (adapter *Adapter) NotifyFail(c chan error) {
+	adapter.onFail = c
 }
