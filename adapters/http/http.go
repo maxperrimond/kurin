@@ -9,8 +9,6 @@ import (
 
 	"os"
 
-	"syscall"
-
 	"github.com/maxperrimond/kurin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -83,16 +81,13 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 
 func (adapter *Adapter) Open() {
 	adapter.logger.Info("Listening on http://0.0.0.0:%d\n", adapter.port)
-	err := adapter.srv.ListenAndServe()
-	if err != nil {
-		adapter.logger.Error(err)
-		adapter.onStop <- syscall.Signal(0)
+	if err := adapter.srv.ListenAndServe(); err != nil {
+		adapter.logger.Fatal(err)
 	}
 }
 
 func (adapter *Adapter) Close() {
-	err := adapter.srv.Shutdown(context.Background())
-	if err != nil {
+	if err := adapter.srv.Shutdown(context.Background()); err != nil {
 		adapter.logger.Error(err)
 	}
 }

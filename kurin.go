@@ -9,22 +9,16 @@ import (
 
 type (
 	App struct {
-		name             string
-		logger           Logger
-		adapters         []Adapter
-		fallibleSystems  []Fallible
-		closableSystems  []Closable
-		stoppableSystems []Stoppable
-		stop             chan os.Signal
-		fail             chan error
+		name            string
+		logger          Logger
+		adapters        []Adapter
+		fallibleSystems []Fallible
+		closableSystems []Closable
+		fail            chan error
 	}
 
 	Fallible interface {
 		NotifyFail(chan error)
-	}
-
-	Stoppable interface {
-		NotifyStop(chan os.Signal)
 	}
 
 	Closable interface {
@@ -33,7 +27,6 @@ type (
 
 	Adapter interface {
 		Closable
-		Stoppable
 		Open()
 		OnFailure(error)
 	}
@@ -65,29 +58,21 @@ func (a *App) RegisterSystems(systems ...interface{}) {
 		if c, ok := s.(Closable); ok {
 			a.closableSystems = append(a.closableSystems, c)
 		}
-
-		if c, ok := s.(Stoppable); ok {
-			c.NotifyStop(a.stop)
-		}
 	}
 }
 
 func (a *App) Run() {
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	defer close(stop)
+
 	a.logger.Info(fmt.Sprintf("Starting %s application...", a.name))
 
-	a.stop = make(chan os.Signal, 1)
 	a.fail = make(chan error)
 	defer close(a.fail)
-	defer close(a.stop)
-
-	signal.Notify(a.stop, syscall.SIGINT, syscall.SIGTERM)
 
 	for _, system := range a.fallibleSystems {
 		system.NotifyFail(a.fail)
-	}
-
-	for _, system := range a.stoppableSystems {
-		system.NotifyStop(a.stop)
 	}
 
 	for _, adapter := range a.adapters {
@@ -98,12 +83,11 @@ func (a *App) Run() {
 		for {
 			select {
 			case err := <-a.fail:
-				a.logger.Error(err)
 				for _, adapter := range a.adapters {
 					adapter.OnFailure(err)
 				}
 				break
-			case <-a.stop:
+			case <-stop:
 				return
 			}
 		}

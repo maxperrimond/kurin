@@ -2,7 +2,6 @@ package amqp
 
 import (
 	"os"
-	"syscall"
 
 	"github.com/assembla/cony"
 	"github.com/maxperrimond/kurin"
@@ -37,8 +36,7 @@ func (adapter *Adapter) Open() {
 		case msg := <-adapter.consumer.Deliveries():
 			adapter.handler(msg)
 		case err := <-adapter.client.Errors():
-			adapter.logger.Error(err)
-			adapter.onStop <- syscall.Signal(0)
+			adapter.logger.Fatal(err)
 		}
 	}
 }
@@ -47,12 +45,8 @@ func (adapter *Adapter) Close() {
 	adapter.client.Close()
 }
 
-func (adapter *Adapter) NotifyStop(c chan os.Signal) {
-	adapter.onStop = c
-}
-
 func (adapter *Adapter) OnFailure(err error) {
 	if err != nil {
-		adapter.onStop <- syscall.Signal(0)
+		adapter.logger.Fatal(err)
 	}
 }
