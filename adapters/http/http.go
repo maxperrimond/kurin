@@ -80,7 +80,7 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 }
 
 func (adapter *Adapter) Open() {
-	adapter.logger.Info(fmt.Sprintf("Listening on http://0.0.0.0:%d\n", adapter.port))
+	adapter.logger.Info(fmt.Sprintf("Listening on http://0.0.0.0:%d", adapter.port))
 	if err := adapter.srv.ListenAndServe(); err != nil {
 		adapter.logger.Fatal(err)
 	}

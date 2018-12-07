@@ -35,7 +35,6 @@ type (
 func NewApp(name string, adapters ...Adapter) *App {
 	app := &App{
 		name:            name,
-		logger:          &defaultLogger{},
 		adapters:        adapters,
 		closableSystems: make([]Closable, 0),
 		fallibleSystems: make([]Fallible, 0),
@@ -62,6 +61,10 @@ func (a *App) RegisterSystems(systems ...interface{}) {
 }
 
 func (a *App) Run() {
+	if a.logger == nil {
+		a.logger = newDefaultLogger()
+	}
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	defer close(stop)
