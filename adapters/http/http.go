@@ -2,7 +2,9 @@ package http
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 	"time"
 
 	"context"
@@ -26,7 +28,7 @@ type (
 	}
 )
 
-func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin.Logger) kurin.Adapter {
+func NewHTTPAdapter(router *mux.Router, handler http.Handler, port int, version string, logger kurin.Logger) kurin.Adapter {
 	adapter := &Adapter{
 		port:    port,
 		version: version,
@@ -39,7 +41,7 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 			Name: "app_requests_total",
 			Help: "A counter for requests to the wrapped handler.",
 		},
-		[]string{"code", "method"},
+		[]string{"code", "method", "handler"},
 	)
 	durationHist := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -47,7 +49,7 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 			Help:    "A histogram of request latencies.",
 			Buckets: prometheus.DefBuckets,
 		},
-		[]string{"code", "method"},
+		[]string{"code", "method", "handler"},
 	)
 	prometheus.MustRegister(totalCount, durationHist)
 
@@ -65,9 +67,7 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 		fmt.Fprintf(w, version)
 	})
 	mux.Handle("/metrics", promhttp.Handler())
-	mux.Handle("/",
-		promhttp.InstrumentHandlerCounter(totalCount,
-			promhttp.InstrumentHandlerDuration(durationHist, handler)))
+	mux.Handle("/", handlerCounter(router, totalCount, handlerDuration(router, durationHist, handler)))
 
 	adapter.srv = &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
@@ -77,6 +77,39 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 	}
 
 	return adapter
+}
+
+func handlerCounter(router *mux.Router, totalCount *prometheus.CounterVec, next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		crw := NewCustomResponseWriter(w)
+		next.ServeHTTP(crw, r)
+		totalCount.With(createLabelsFromRequestResponse(router, r, crw)).Inc()
+	})
+}
+
+func handlerDuration(router *mux.Router, durationHist *prometheus.HistogramVec, next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		crw := NewCustomResponseWriter(w)
+		now := time.Now()
+		next.ServeHTTP(crw, r)
+		durationHist.With(createLabelsFromRequestResponse(router, r, crw)).Observe(time.Since(now).Seconds())
+	})
+}
+
+func createLabelsFromRequestResponse(router *mux.Router, r *http.Request, crw *customResponseWriter) prometheus.Labels {
+	handler := r.URL.Path
+	var match mux.RouteMatch
+	routeExists := router.Match(r, &match)
+	if routeExists {
+		handler,_ = match.Route.GetPathTemplate()
+	}
+
+	labels := prometheus.Labels{}
+	labels["method"] = r.Method
+	labels["handler"] = handler
+	labels["code"] = strconv.Itoa(crw.statusCode)
+
+	return labels
 }
 
 func (adapter *Adapter) Open() {
