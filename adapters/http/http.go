@@ -104,7 +104,6 @@ func createLabelFromRequestResponse(router *mux.Router, r *http.Request, crw *cu
 		handler,_ = match.Route.GetPathTemplate()
 	}
 
-
 	labels := prometheus.Labels{}
 	labels["method"] = r.Method
 	labels["handler"] = handler
