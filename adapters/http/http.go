@@ -97,9 +97,14 @@ func handlerDuration(durationHist *prometheus.HistogramVec, next http.Handler) h
 }
 
 func createLabelFromRequestResponse(r *http.Request, crw *customResponseWriter) prometheus.Labels {
+	handler := r.URL.Path
+	if mux.CurrentRoute(r) != nil {
+		handler, _ = mux.CurrentRoute(r).GetPathTemplate()
+	}
+
 	labels := prometheus.Labels{}
 	labels["method"] = r.Method
-	labels["handler"], _ = mux.CurrentRoute(r).GetPathTemplate()
+	labels["handler"] = handler
 	labels["code"] = strconv.Itoa(crw.statusCode)
 
 	return labels
