@@ -83,7 +83,7 @@ func handlerCounter(router *mux.Router, totalCount *prometheus.CounterVec, next 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		crw := NewCustomResponseWriter(w)
 		next.ServeHTTP(crw, r)
-		totalCount.With(createLabelFromRequestResponse(router, r, crw)).Inc()
+		totalCount.With(createLabelsFromRequestResponse(router, r, crw)).Inc()
 	})
 }
 
@@ -92,11 +92,11 @@ func handlerDuration(router *mux.Router, durationHist *prometheus.HistogramVec, 
 		crw := NewCustomResponseWriter(w)
 		now := time.Now()
 		next.ServeHTTP(crw, r)
-		durationHist.With(createLabelFromRequestResponse(router, r, crw)).Observe(time.Since(now).Seconds())
+		durationHist.With(createLabelsFromRequestResponse(router, r, crw)).Observe(time.Since(now).Seconds())
 	})
 }
 
-func createLabelFromRequestResponse(router *mux.Router, r *http.Request, crw *customResponseWriter) prometheus.Labels {
+func createLabelsFromRequestResponse(router *mux.Router, r *http.Request, crw *customResponseWriter) prometheus.Labels {
 	handler := r.URL.Path
 	var match mux.RouteMatch
 	routeExists := router.Match(r, &match)
