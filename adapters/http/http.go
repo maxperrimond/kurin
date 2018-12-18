@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"context"
@@ -39,7 +40,7 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 			Name: "app_requests_total",
 			Help: "A counter for requests to the wrapped handler.",
 		},
-		[]string{"code", "method"},
+		[]string{"code", "method", "handler"},
 	)
 	durationHist := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -65,9 +66,7 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 		fmt.Fprintf(w, version)
 	})
 	mux.Handle("/metrics", promhttp.Handler())
-	mux.Handle("/",
-		promhttp.InstrumentHandlerCounter(totalCount,
-			promhttp.InstrumentHandlerDuration(durationHist, handler)))
+	mux.Handle("/", handlerCounter(totalCount, handlerDuration(durationHist, handler)))
 
 	adapter.srv = &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
@@ -77,6 +76,32 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 	}
 
 	return adapter
+}
+
+func handlerCounter(totalCount *prometheus.CounterVec, next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		crw := NewCustomResponseWriter(w)
+		next.ServeHTTP(crw, r)
+		totalCount.With(createLabelFromRequestResponse(r, crw)).Inc()
+	})
+}
+
+func handlerDuration(durationHist *prometheus.HistogramVec, next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		crw := NewCustomResponseWriter(w)
+		now := time.Now()
+		next.ServeHTTP(crw, r)
+		durationHist.With(createLabelFromRequestResponse(r, crw)).Observe(time.Since(now).Seconds())
+	})
+}
+
+func createLabelFromRequestResponse(r *http.Request, crw *customResponseWriter) prometheus.Labels {
+	labels := prometheus.Labels{}
+	labels["method"] = r.Method
+	labels["handler"] = r.URL.Path
+	labels["code"] = strconv.Itoa(crw.statusCode)
+
+	return labels
 }
 
 func (adapter *Adapter) Open() {
