@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 	"time"
@@ -48,7 +49,7 @@ func NewHTTPAdapter(handler http.Handler, port int, version string, logger kurin
 			Help:    "A histogram of request latencies.",
 			Buckets: prometheus.DefBuckets,
 		},
-		[]string{"code", "method"},
+		[]string{"code", "method", "handler"},
 	)
 	prometheus.MustRegister(totalCount, durationHist)
 
@@ -98,7 +99,7 @@ func handlerDuration(durationHist *prometheus.HistogramVec, next http.Handler) h
 func createLabelFromRequestResponse(r *http.Request, crw *customResponseWriter) prometheus.Labels {
 	labels := prometheus.Labels{}
 	labels["method"] = r.Method
-	labels["handler"] = r.URL.Path
+	labels["handler"], _ = mux.CurrentRoute(r).GetPathTemplate()
 	labels["code"] = strconv.Itoa(crw.statusCode)
 
 	return labels
