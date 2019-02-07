@@ -100,7 +100,7 @@ func createLabelsFromRequestResponse(router *mux.Router, r *http.Request, crw *c
 	handler := r.URL.Path
 	var match mux.RouteMatch
 	routeExists := router.Match(r, &match)
-	if routeExists {
+	if routeExists && match.Route != nil {
 		handler,_ = match.Route.GetPathTemplate()
 	}
 
