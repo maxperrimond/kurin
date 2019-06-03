@@ -26,6 +26,10 @@ func NewProvider(postgresURL string, logger *zap.Logger) (*Provider, error) {
 	return &Provider{db, logger}, nil
 }
 
+func (provider *Provider) GetDatabase() Database {
+	return &postgresDB{provider.db}
+}
+
 func (provider *Provider) NotifyFail(ce chan error) {
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
